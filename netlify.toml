@@ -1,0 +1,13 @@
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+# ส่ง path /netlify/functions/* ไปยัง Netlify Functions endpoint จริง
+# (frontend เรียก /netlify/functions/... ได้ตรง ๆ ตาม spec)
+[[redirects]]
+  from = "/netlify/functions/*"
+  to = "/.netlify/functions/:splat"
+  status = 200

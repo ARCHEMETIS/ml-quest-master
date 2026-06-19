@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ML Quest Master</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:'Geist',-apple-system,BlinkMacSystemFont,sans-serif}
+  .mono{font-family:'Geist Mono',monospace}
+  @keyframes pop{0%{transform:scale(.5);opacity:0}55%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
+  @keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+  @keyframes blink{0%,80%,100%{opacity:.3;transform:translateY(0)}40%{opacity:1;transform:translateY(-2px)}}
+  .anim-rise{animation:rise .35s ease}
+  .anim-pop{animation:pop .4s ease}
+  .anim-sheet{animation:sheetUp .34s cubic-bezier(.32,.72,0,1)}
+  .scroll-hide::-webkit-scrollbar{display:none}
+  .scroll-hide{scrollbar-width:none}
+  .press:active{transform:scale(.96)}
+  /* โค้ดในคำตอบโค้ช */
+  .coach pre{background:#1B1C22;color:#E8E8EF;padding:10px 12px;border-radius:8px;overflow:auto;font-family:'Geist Mono',monospace;font-size:12px;margin:6px 0}
+  .coach code{font-family:'Geist Mono',monospace;background:#F1EFFE;color:#5546C9;padding:1px 5px;border-radius:4px;font-size:12px}
+  .coach pre code{background:none;color:inherit;padding:0}
+</style>
+</head>
+<body style="background:#e7e5df">
+
+<div style="min-height:100vh;width:100%;padding:24px;display:flex;justify-content:center;align-items:flex-start">
+
+  <!-- ===== Phone frame ===== -->
+  <div style="width:390px;max-width:100%;height:844px;max-height:96vh;border-radius:48px;overflow:hidden;position:relative;background:#F7F8FA;box-shadow:0 40px 80px rgba(0,0,0,.2),0 0 0 1px rgba(0,0,0,.1)">
+
+    <!-- notch -->
+    <div style="position:absolute;top:11px;left:50%;transform:translateX(-50%);width:126px;height:37px;border-radius:24px;background:#000;z-index:50"></div>
+
+    <!-- status bar -->
+    <div style="position:absolute;top:0;left:0;right:0;z-index:40;display:flex;align-items:center;justify-content:space-between;padding:20px 30px 0">
+      <span style="font-size:17px;font-weight:600;color:#000">9:41</span>
+      <div style="display:flex;align-items:center;gap:7px">
+        <svg width="19" height="12" viewBox="0 0 19 12"><rect x="0" y="7.5" width="3.2" height="4.5" rx=".7" fill="#000"/><rect x="4.8" y="5" width="3.2" height="7" rx=".7" fill="#000"/><rect x="9.6" y="2.5" width="3.2" height="9.5" rx=".7" fill="#000"/><rect x="14.4" y="0" width="3.2" height="12" rx=".7" fill="#000"/></svg>
+        <svg width="27" height="13" viewBox="0 0 27 13"><rect x=".5" y=".5" width="23" height="12" rx="3.5" stroke="#000" stroke-opacity=".35" fill="none"/><rect x="2" y="2" width="20" height="9" rx="2" fill="#000"/><path d="M25 4.5V8.5C25.8 8.2 26.5 7.2 26.5 6.5C26.5 5.8 25.8 4.8 25 4.5Z" fill="#000" fill-opacity=".4"/></svg>
+      </div>
+    </div>
+
+    <!-- ===== scroll area ===== -->
+    <div class="scroll-hide" style="position:absolute;inset:0;overflow-y:auto">
+    <div style="padding:62px 20px 50px;display:flex;flex-direction:column;gap:16px;min-height:100%;color:#1B1C22">
+
+      <!-- header -->
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:11px">
+          <div style="width:38px;height:38px;border-radius:11px;background:linear-gradient(150deg,#7C6BF0,#5849D6);display:flex;align-items:center;justify-content:center;box-shadow:0 5px 14px -3px rgba(108,92,231,.6)">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <div style="font-size:15px;font-weight:600;letter-spacing:-.01em">ML Quest Master</div>
+            <div id="greeting" style="font-size:12px;color:#9398A3">เควสของคุณวันนี้</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button id="btnSettings" class="press" title="ตั้งค่าการเรียน" style="width:34px;height:34px;border-radius:999px;background:#fff;border:1px solid #E6E7EC;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.04)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5E626E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </button>
+          <div style="display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #E6E7EC;border-radius:999px;padding:7px 11px 7px 9px;box-shadow:0 1px 2px rgba(0,0,0,.04)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+            <span id="streak" class="mono" style="font-size:13px;font-weight:600">–</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- current phase -->
+      <div id="phaseCard" class="press" style="background:#fff;border:1px solid #ECEDF1;border-radius:16px;padding:16px;box-shadow:0 1px 2px rgba(20,22,40,.03);display:flex;flex-direction:column;gap:12px;cursor:pointer">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#9398A3">Current phase</span>
+          <span style="display:flex;align-items:center;gap:6px">
+            <span id="phaseNum" class="mono" style="font-size:11px;font-weight:600;color:#6C5CE7">– / –</span>
+            <span style="font-size:11px;font-weight:600;color:#9F94EC">ดู Roadmap ›</span>
+          </span>
+        </div>
+        <div style="display:flex;align-items:baseline;justify-content:space-between">
+          <span id="phaseName" style="font-size:17px;font-weight:600;letter-spacing:-.01em">—</span>
+          <span id="phaseNext" style="font-size:12px;color:#9398A3">Next · —</span>
+        </div>
+        <div id="phaseSegs" style="display:flex;gap:6px"></div>
+        <div style="font-size:12px;color:#5E626E"><span id="phasePctText" class="mono" style="font-weight:600;color:#1B1C22">0%</span> <span id="phaseThrough">through</span></div>
+        <div id="phaseGoal" style="font-size:11.5px;line-height:1.45;color:#9398A3;border-top:1px solid #F0F1F4;padding-top:9px"></div>
+      </div>
+
+      <!-- stats -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+        <div style="background:#fff;border:1px solid #ECEDF1;border-radius:14px;padding:13px 12px;display:flex;flex-direction:column;gap:5px;box-shadow:0 1px 2px rgba(20,22,40,.03)">
+          <span id="statXp" class="mono" style="font-size:18px;font-weight:600;letter-spacing:-.02em;color:#6C5CE7">0</span>
+          <span style="font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#9398A3">XP earned</span>
+        </div>
+        <div style="background:#fff;border:1px solid #ECEDF1;border-radius:14px;padding:13px 12px;display:flex;flex-direction:column;gap:5px;box-shadow:0 1px 2px rgba(20,22,40,.03)">
+          <span id="statQuests" class="mono" style="font-size:18px;font-weight:600;letter-spacing:-.02em;color:#1B1C22">0</span>
+          <span style="font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#9398A3">Quests</span>
+        </div>
+        <div style="background:#fff;border:1px solid #ECEDF1;border-radius:14px;padding:13px 12px;display:flex;flex-direction:column;gap:5px;box-shadow:0 1px 2px rgba(20,22,40,.03)">
+          <span id="statGrade" class="mono" style="font-size:18px;font-weight:600;letter-spacing:-.02em;color:#15936A">—</span>
+          <span style="font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#9398A3">Grade</span>
+        </div>
+      </div>
+
+      <!-- today's quest -->
+      <div style="background:#fff;border:1px solid #ECEDF1;border-radius:18px;padding:18px;box-shadow:0 6px 20px -8px rgba(20,22,40,.12);display:flex;flex-direction:column;gap:13px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span style="font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#9398A3">Today's quest</span>
+          <div id="questTime" style="display:flex;align-items:center;gap:5px;color:#9398A3;font-size:12px">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+            <span id="questTimeText">~– min</span>
+          </div>
+        </div>
+
+        <!-- loading -->
+        <div id="questLoading" style="display:flex;flex-direction:column;gap:11px;padding:6px 0">
+          <div style="height:14px;width:55%;border-radius:6px;background:#EEF0F3"></div>
+          <div style="height:20px;width:90%;border-radius:6px;background:#EEF0F3"></div>
+          <div style="height:13px;width:100%;border-radius:6px;background:#F2F3F6"></div>
+          <div style="height:13px;width:70%;border-radius:6px;background:#F2F3F6"></div>
+          <div style="font-size:12px;color:#9398A3;display:flex;align-items:center;gap:6px;margin-top:2px">
+            <span style="width:7px;height:7px;border-radius:50%;background:#6C5CE7;animation:blink 1.2s infinite"></span>
+            Gemini กำลังสร้างเควสวันนี้…
+          </div>
+        </div>
+
+        <!-- pending state -->
+        <div id="questPending" style="display:none;flex-direction:column;gap:13px">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <span id="questDiff" style="display:inline-block;font-size:11px;font-weight:600;background:#F1EFFE;color:#5546C9;padding:4px 10px;border-radius:7px">Intermediate</span>
+              <span id="questType" style="display:inline-block;font-size:11px;font-weight:600;background:#EEF6FF;color:#2563EB;padding:4px 10px;border-radius:7px">คอร์ส</span>
+            </div>
+            <div id="questTitle" style="font-size:19px;font-weight:600;letter-spacing:-.02em;line-height:1.25">—</div>
+            <div id="questDesc" style="font-size:13.5px;line-height:1.55;color:#5E626E">—</div>
+          </div>
+
+          <!-- resources -->
+          <div id="questResources" style="display:flex;flex-direction:column;gap:7px"></div>
+
+          <!-- steps checklist -->
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <span style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#9398A3">ขั้นตอน — ติ๊กเมื่อทำจริง</span>
+              <span id="stepProgress" class="mono" style="font-size:11px;font-weight:600;color:#9398A3">0/0</span>
+            </div>
+            <div id="questSteps" style="display:flex;flex-direction:column;gap:7px"></div>
+          </div>
+
+          <!-- deliverable + verify -->
+          <div id="questDeliverable" style="display:none;background:#F8F7FF;border:1px solid #ECE9FC;border-radius:11px;padding:11px 13px;font-size:12.5px;line-height:1.55;color:#4A4D58"></div>
+          <div id="questVerify" style="display:none;font-size:12px;line-height:1.5;color:#9398A3"></div>
+
+          <div id="questTags" style="display:flex;flex-wrap:wrap;gap:7px"></div>
+          <div style="height:1px;background:#F0F1F4"></div>
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div style="display:flex;align-items:center;gap:6px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6C5CE7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg>
+              <span id="questXp" class="mono" style="font-size:13px;font-weight:600;color:#6C5CE7">+0 XP</span>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button id="btnSkip" class="press" style="padding:11px 17px;border-radius:10px;background:#fff;border:1px solid #E2E3E9;color:#5E626E;font-weight:600;font-size:13px;cursor:pointer">ข้ามวันนี้</button>
+              <button id="btnComplete" class="press" disabled style="padding:11px 20px;border-radius:10px;background:#C9C3F0;border:none;color:#fff;font-weight:600;font-size:13px;cursor:not-allowed;box-shadow:none">ทำเสร็จแล้ว</button>
+            </div>
+          </div>
+          <div id="completeHint" style="font-size:11.5px;color:#B3B7C0;text-align:right;margin-top:-6px">ติ๊กครบทุกขั้นตอนเพื่อปลดล็อก</div>
+        </div>
+
+        <!-- done state -->
+        <div id="questDone" style="display:none;align-items:center;gap:13px;background:#E9F7F0;border:1px solid #CDEBDD;border-radius:14px;padding:14px" class="anim-rise">
+          <div class="anim-pop" style="width:42px;height:42px;border-radius:50%;background:#15A06B;display:flex;align-items:center;justify-content:center;flex:none;box-shadow:0 6px 16px -4px rgba(21,160,107,.5)"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+          <div style="display:flex;flex-direction:column;gap:2px;flex:1">
+            <span style="font-size:14px;font-weight:600;color:#0F7A52">เควสสำเร็จ! 🎉</span>
+            <span id="doneMeta" style="font-size:12px;color:#2F9E73">+0 XP</span>
+          </div>
+        </div>
+
+        <!-- skipped state -->
+        <div id="questSkipped" style="display:none;align-items:center;gap:13px;background:#F5F6F8;border:1px solid #E6E7EC;border-radius:14px;padding:14px" class="anim-rise">
+          <div style="width:42px;height:42px;border-radius:50%;background:#E6E7EC;display:flex;align-items:center;justify-content:center;flex:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8A8E99" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14"/></svg></div>
+          <div style="display:flex;flex-direction:column;gap:2px;flex:1"><span style="font-size:14px;font-weight:600;color:#5E626E">ข้ามคืนนี้แล้ว</span><span style="font-size:12px;color:#9398A3">Streak ยังอยู่ — เจอกันพรุ่งนี้</span></div>
+        </div>
+
+        <!-- error -->
+        <div id="questError" style="display:none;background:#FEF2F2;border:1px solid #FECACA;border-radius:12px;padding:14px;color:#B91C1C;font-size:13px;line-height:1.5"></div>
+      </div>
+
+      <!-- ask coach -->
+      <button id="btnOpenChat" class="press" style="display:flex;align-items:center;gap:13px;background:#fff;border:1px solid #ECEDF1;border-radius:16px;padding:15px 16px;box-shadow:0 1px 2px rgba(20,22,40,.03);cursor:pointer;text-align:left;width:100%;font-family:inherit">
+        <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(150deg,#7C6BF0,#5849D6);display:flex;align-items:center;justify-content:center;flex:none;box-shadow:0 5px 14px -3px rgba(108,92,231,.55)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 4.6L18.5 9.5l-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9z"/><path d="M19 14l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/></svg>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0">
+          <span style="font-size:14.5px;font-weight:600;letter-spacing:-.01em;color:#1B1C22">ถาม Quest Coach</span>
+          <span style="font-size:12px;color:#9398A3">ติดตรงไหน? ขอใบ้หรือคำอธิบายได้เลย</span>
+        </div>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C4C7D0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
+
+      <!-- recent quests -->
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#9398A3">Recent quests</span>
+          <span style="font-size:11px;color:#B3B7C0">ล่าสุด</span>
+        </div>
+        <div id="recentList" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+
+    </div>
+    </div>
+
+    <!-- ===== chat bottom sheet ===== -->
+    <div id="chatOverlay" style="display:none;position:absolute;inset:0;z-index:70">
+      <div id="chatBackdrop" style="position:absolute;inset:0;background:rgba(20,22,40,.34)" class="anim-rise"></div>
+      <div style="position:absolute;left:0;right:0;bottom:0;height:82%;background:#F7F8FA;border-radius:28px 28px 0 0;box-shadow:0 -12px 44px rgba(20,22,40,.2);display:flex;flex-direction:column;overflow:hidden" class="anim-sheet">
+        <div style="display:flex;justify-content:center;padding-top:10px;flex:none"><div style="width:38px;height:4px;border-radius:2px;background:#D7DAE0"></div></div>
+        <div style="display:flex;align-items:center;gap:11px;padding:12px 18px 14px;border-bottom:1px solid #ECEDF1;flex:none">
+          <div style="width:36px;height:36px;border-radius:11px;background:linear-gradient(150deg,#7C6BF0,#5849D6);display:flex;align-items:center;justify-content:center;flex:none;box-shadow:0 4px 12px -3px rgba(108,92,231,.55)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 4.6L18.5 9.5l-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9z"/></svg>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:1px;flex:1">
+            <span style="font-size:15px;font-weight:600;letter-spacing:-.01em">Quest Coach</span>
+            <span style="font-size:11.5px;color:#9398A3;display:flex;align-items:center;gap:5px"><span style="width:6px;height:6px;border-radius:50%;background:#16A34A;display:inline-block"></span>Powered by Gemini 2.0 Flash</span>
+          </div>
+          <button id="btnCloseChat" class="press" style="width:32px;height:32px;border-radius:9px;background:#EEF0F3;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5E626E" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+        </div>
+
+        <div id="chatMsgs" class="scroll-hide" style="flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:12px"></div>
+
+        <div id="chatSuggestions" style="display:flex;gap:8px;padding:0 18px 10px;flex-wrap:wrap;flex:none"></div>
+
+        <div style="display:flex;align-items:center;gap:9px;padding:12px 16px 14px;border-top:1px solid #ECEDF1;background:#fff;flex:none">
+          <input id="chatInput" placeholder="ถามเกี่ยวกับเควสคืนนี้…" style="flex:1;border:1px solid #E2E3E9;border-radius:13px;padding:12px 14px;font-size:13.5px;font-family:inherit;color:#1B1C22;outline:none;background:#F7F8FA">
+          <button id="btnSend" class="press" style="width:44px;height:44px;border-radius:13px;background:#6C5CE7;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;box-shadow:0 5px 14px -4px rgba(108,92,231,.6)"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== roadmap modal ===== -->
+    <div id="roadmapOverlay" style="display:none;position:absolute;inset:0;z-index:80">
+      <div id="roadmapBackdrop" style="position:absolute;inset:0;background:rgba(20,22,40,.34)" class="anim-rise"></div>
+      <div style="position:absolute;left:0;right:0;bottom:0;height:86%;background:#F7F8FA;border-radius:28px 28px 0 0;box-shadow:0 -12px 44px rgba(20,22,40,.2);display:flex;flex-direction:column;overflow:hidden" class="anim-sheet">
+        <div style="display:flex;justify-content:center;padding-top:10px;flex:none"><div style="width:38px;height:4px;border-radius:2px;background:#D7DAE0"></div></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px 14px;border-bottom:1px solid #ECEDF1;flex:none">
+          <div style="display:flex;flex-direction:column;gap:1px">
+            <span style="font-size:15px;font-weight:600;letter-spacing:-.01em">Roadmap การเรียน</span>
+            <span id="roadmapSub" style="font-size:11.5px;color:#9398A3">เส้นทางสู่เป้าหมายของคุณ</span>
+          </div>
+          <button id="btnCloseRoadmap" class="press" style="width:32px;height:32px;border-radius:9px;background:#EEF0F3;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5E626E" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+        </div>
+        <div id="roadmapList" class="scroll-hide" style="overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:0"></div>
+      </div>
+    </div>
+
+    <!-- ===== settings modal ===== -->
+    <div id="settingsOverlay" style="display:none;position:absolute;inset:0;z-index:80">
+      <div id="settingsBackdrop" style="position:absolute;inset:0;background:rgba(20,22,40,.34)" class="anim-rise"></div>
+      <div style="position:absolute;left:0;right:0;bottom:0;max-height:88%;background:#F7F8FA;border-radius:28px 28px 0 0;box-shadow:0 -12px 44px rgba(20,22,40,.2);display:flex;flex-direction:column;overflow:hidden" class="anim-sheet">
+        <div style="display:flex;justify-content:center;padding-top:10px;flex:none"><div style="width:38px;height:4px;border-radius:2px;background:#D7DAE0"></div></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px 14px;border-bottom:1px solid #ECEDF1;flex:none">
+          <div style="display:flex;flex-direction:column;gap:1px">
+            <span style="font-size:15px;font-weight:600;letter-spacing:-.01em">ตั้งค่าการเรียน</span>
+            <span style="font-size:11.5px;color:#9398A3">ใช้วางเควสให้เหมาะกับคุณ</span>
+          </div>
+          <button id="btnCloseSettings" class="press" style="width:32px;height:32px;border-radius:9px;background:#EEF0F3;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5E626E" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+        </div>
+        <div class="scroll-hide" style="overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:18px">
+          <div class="setField" data-key="level">
+            <div style="font-size:12px;font-weight:600;color:#5E626E;margin-bottom:8px">พื้นฐานปัจจุบัน</div>
+            <div class="setOpts" style="display:flex;flex-direction:column;gap:7px"></div>
+          </div>
+          <div class="setField" data-key="goal">
+            <div style="font-size:12px;font-weight:600;color:#5E626E;margin-bottom:8px">เป้าหมาย</div>
+            <div class="setOpts" style="display:flex;flex-direction:column;gap:7px"></div>
+          </div>
+          <div class="setField" data-key="time">
+            <div style="font-size:12px;font-weight:600;color:#5E626E;margin-bottom:8px">เวลาเรียนต่อรอบ</div>
+            <div class="setOpts" style="display:flex;flex-direction:column;gap:7px"></div>
+          </div>
+          <div class="setField" data-key="style">
+            <div style="font-size:12px;font-weight:600;color:#5E626E;margin-bottom:8px">สไตล์เควส</div>
+            <div class="setOpts" style="display:flex;flex-direction:column;gap:7px"></div>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:600;color:#5E626E;margin-bottom:3px">คอร์สที่เรียนจบแล้ว (จะข้าม ไม่สั่งซ้ำ)</div>
+            <div style="font-size:11px;color:#9398A3;margin-bottom:8px">ติ๊กคอร์สที่ทำเสร็จแล้ว</div>
+            <div id="doneOpts" style="display:flex;flex-direction:column;gap:7px"></div>
+          </div>
+          <button id="btnSaveSettings" class="press" style="margin-top:4px;padding:13px;border-radius:12px;background:#6C5CE7;border:none;color:#fff;font-weight:600;font-size:14px;cursor:pointer;box-shadow:0 5px 14px -4px rgba(108,92,231,.6)">บันทึก & สร้างเควสใหม่</button>
+          <div style="font-size:11px;color:#B3B7C0;text-align:center">บันทึกแล้วเควสถัดไปจะปรับตามค่านี้</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- home indicator -->
+    <div style="position:absolute;bottom:0;left:0;right:0;z-index:60;height:34px;display:flex;justify-content:center;align-items:flex-end;padding-bottom:8px;pointer-events:none">
+      <div style="width:139px;height:5px;border-radius:100px;background:rgba(0,0,0,.25)"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const API = "/netlify/functions";
+
+const state = {
+  day: null,
+  phase: null,
+  quest: null,
+  progressId: null,
+  stats: { streak: 0, xp: 0, quests: 0, grade: "—" },
+  status: "pending",
+  messages: [],
+  pending: false,
+};
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+
+// ---------- profile (เก็บใน localStorage, default จาก onboarding) ----------
+const PROFILE_OPTS = {
+  level: [
+    "เริ่มจากศูนย์ (ไม่เคยเขียนโปรแกรม)",
+    "เขียน Python ได้บ้าง แต่ยังไม่เคยทำ Machine Learning",
+    "เคยทำ ML มาบ้าง อยากต่อยอด/ลงลึก",
+  ],
+  goal: [
+    "เก่ง Kaggle / แข่ง competition จริง",
+    "ทำพอร์ต/หางาน Data Science + เข้าใจทฤษฎีให้ลึก + ทำโปรเจคของตัวเอง",
+    "เข้าใจทฤษฎีแน่น และทำโปรเจคที่สนใจเอง",
+  ],
+  time: [
+    "เวลาว่างไม่แน่นอน เรียนเป็นช่วง ๆ",
+    "~30 นาทีต่อรอบ",
+    "~1 ชั่วโมงต่อรอบ",
+    "2 ชั่วโมงขึ้นไปต่อรอบ",
+  ],
+  style: [
+    "ผสม Kaggle Learn courses + ลงมือทำโปรเจค/dataset จริง",
+    "เน้นเรียน Kaggle Learn courses เป็นหลัก",
+    "เน้นลงมือทำโปรเจค/dataset จริงเป็นหลัก",
+  ],
+};
+const PROFILE_DEFAULT = {
+  level: PROFILE_OPTS.level[1],
+  goal: PROFILE_OPTS.goal[1],
+  time: PROFILE_OPTS.time[0],
+  style: PROFILE_OPTS.style[0],
+  done: ["Kaggle Learn: Python", "Kaggle Learn: Pandas"], // เรียนจบแล้ว
+};
+function loadProfile() {
+  try {
+    return { ...PROFILE_DEFAULT, ...(JSON.parse(localStorage.getItem("mlq_profile") || "{}")) };
+  } catch { return { ...PROFILE_DEFAULT }; }
+}
+function saveProfile(p) { localStorage.setItem("mlq_profile", JSON.stringify(p)); }
+state.profile = loadProfile();
+
+// ---------- init ----------
+async function init(fresh) {
+  greet();
+  if (!fresh) showLoading();
+  try {
+    const params = new URLSearchParams();
+    Object.entries(state.profile).forEach(([k, v]) => {
+      if (k === "done") params.set("done", (v || []).join("||"));
+      else params.set(k, v);
+    });
+    if (fresh) params.set("fresh", "1");
+    const res = await fetch(`${API}/generate-quest?${params.toString()}`);
+    const data = await res.json();
+    if (res.status === 429 && data.rateLimited) { showRateLimit(data.rateLimited); return; }
+    if (!res.ok) throw new Error(data.error || "โหลดเควสไม่สำเร็จ");
+    state.status = "pending";
+    applyData(data);
+    renderQuest();
+    renderStats();
+    renderPhase();
+    renderRecent();
+  } catch (err) {
+    showQuestError(err.message);
+  }
+}
+
+function showLoading() {
+  $("questLoading").style.display = "flex";
+  $("questPending").style.display = "none";
+  $("questDone").style.display = "none";
+  $("questSkipped").style.display = "none";
+  $("questError").style.display = "none";
+}
+
+function greet() {
+  const h = new Date().getHours();
+  let g = "เควสของคุณวันนี้";
+  if (h < 12) g = "สวัสดีตอนเช้า — เควสวันนี้";
+  else if (h < 18) g = "สวัสดีตอนบ่าย — เควสวันนี้";
+  else g = "สวัสดีตอนค่ำ — เควสคืนนี้";
+  $("greeting").textContent = g;
+}
+
+function applyData(data) {
+  state.day = data.day;
+  state.phase = data.phase;
+  state.quest = data.quest;
+  state.progressId = data.progressId;
+  state.stats = data.stats || state.stats;
+  state.roadmap = data.roadmap || state.roadmap;
+  if (data.profile) state.profile = { ...state.profile, ...data.profile };
+  state.checked = (data.quest.steps || []).map(() => false);
+  state.messages = [{
+    role: "assistant",
+    content: `สวัสดีครับ ผมคือ Quest Coach 👋 ถามได้เลยเกี่ยวกับเควส "${data.quest.title}" — อยากได้ใบ้ให้เริ่ม, อธิบายแนวคิด/คณิตศาสตร์ หรือช่วยตรวจแผนก็ได้ครับ`
+  }];
+}
+
+// ---------- render: phase ----------
+function renderPhase() {
+  const p = state.phase;
+  $("phaseNum").textContent = `${String(p.number).padStart(2,"0")} / ${String(p.total).padStart(2,"0")}`;
+  $("phaseName").textContent = p.name;
+  $("phaseNext").textContent = `Next · ${p.next}`;
+  $("phasePctText").textContent = `${p.pct}%`;
+  $("phaseThrough").textContent = `through ${p.name}`;
+  if (p.goal) $("phaseGoal").textContent = "🎯 " + p.goal;
+  const segs = $("phaseSegs");
+  segs.innerHTML = "";
+  for (let i = 0; i < p.total; i++) {
+    const seg = document.createElement("div");
+    seg.style.cssText = "flex:1;height:8px;border-radius:5px;overflow:hidden;background:" + (i < p.index ? "#6C5CE7" : "#EDEEF2");
+    if (i === p.index) {
+      const fill = document.createElement("div");
+      fill.style.cssText = `height:100%;border-radius:5px;background:#6C5CE7;width:${p.pct}%;transition:width .5s cubic-bezier(.4,0,.2,1)`;
+      seg.appendChild(fill);
+    }
+    segs.appendChild(seg);
+  }
+}
+
+// ---------- render: stats ----------
+function renderStats() {
+  const s = state.stats;
+  $("streak").textContent = s.streak;
+  $("statXp").textContent = Number(s.xp).toLocaleString("en-US");
+  $("statQuests").textContent = s.quests;
+  $("statGrade").textContent = s.grade;
+}
+
+// ---------- render: quest ----------
+function renderQuest() {
+  const q = state.quest;
+  $("questLoading").style.display = "none";
+  $("questError").style.display = "none";
+  $("questPending").style.display = "none";
+  $("questDone").style.display = "none";
+  $("questSkipped").style.display = "none";
+
+  $("questTimeText").textContent = `~${q.time_minutes} min`;
+
+  if (state.status === "done") {
+    $("questDone").style.display = "flex";
+    $("doneMeta").textContent = `+${q.xp} XP · streak ${state.stats.streak} วัน`;
+    return;
+  }
+  if (state.status === "skip") {
+    $("questSkipped").style.display = "flex";
+    return;
+  }
+
+  // pending
+  $("questPending").style.display = "flex";
+  $("questDiff").textContent = q.difficulty;
+  const typeEl = $("questType");
+  if (q.type === "project") { typeEl.textContent = "โปรเจค"; typeEl.style.background = "#FFF4E8"; typeEl.style.color = "#C2620A"; }
+  else { typeEl.textContent = "คอร์ส"; typeEl.style.background = "#EEF6FF"; typeEl.style.color = "#2563EB"; }
+  $("questTitle").textContent = q.title;
+  $("questDesc").textContent = q.description;
+  $("questXp").textContent = `+${q.xp} XP`;
+
+  // resources (ลิงก์ Kaggle จริง เปิดแท็บใหม่)
+  const resBox = $("questResources");
+  resBox.innerHTML = "";
+  (q.resources || []).forEach((r) => {
+    const a = document.createElement("a");
+    a.href = r.url; a.target = "_blank"; a.rel = "noopener noreferrer";
+    a.style.cssText = "display:flex;align-items:center;gap:9px;background:#F1EFFE;border:1px solid #E4DFFA;border-radius:11px;padding:10px 12px;text-decoration:none";
+    a.innerHTML = `
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6C5CE7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+      <span style="flex:1;font-size:12.5px;font-weight:600;color:#5546C9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.label)}</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9F94EC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg>`;
+    resBox.appendChild(a);
+  });
+
+  // steps checklist (ติ๊กครบถึงปลดล็อก complete)
+  const stepsBox = $("questSteps");
+  stepsBox.innerHTML = "";
+  (q.steps || []).forEach((s, i) => {
+    const row = document.createElement("label");
+    row.style.cssText = "display:flex;gap:9px;align-items:flex-start;cursor:pointer;user-select:none";
+    const checked = state.checked[i];
+    row.innerHTML = `
+      <span class="stepBox" style="width:19px;height:19px;border-radius:6px;border:2px solid ${checked?"#6C5CE7":"#D4D7E0"};background:${checked?"#6C5CE7":"#fff"};flex:none;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:.15s">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" style="opacity:${checked?1:0}"><path d="M20 6 9 17l-5-5"/></svg>
+      </span>
+      <span style="flex:1;font-size:13px;line-height:1.5;color:${checked?"#9398A3":"#3A3D48"};text-decoration:${checked?"line-through":"none"}">${esc(s)}</span>`;
+    row.querySelector(".stepBox").parentElement.addEventListener("click", (e) => { e.preventDefault(); toggleStep(i); });
+    stepsBox.appendChild(row);
+  });
+
+  // deliverable + verify
+  const del = $("questDeliverable");
+  if (q.deliverable) { del.style.display = "block"; del.innerHTML = `<strong style="color:#5546C9">ต้องได้:</strong> ${esc(q.deliverable)}`; }
+  else del.style.display = "none";
+  const ver = $("questVerify");
+  if (q.verify) { ver.style.display = "block"; ver.innerHTML = `✓ เช็คว่าเสร็จ: ${esc(q.verify)}`; }
+  else ver.style.display = "none";
+
+  const tags = $("questTags");
+  tags.innerHTML = "";
+  (q.tags || []).forEach((t) => {
+    const span = document.createElement("span");
+    span.style.cssText = "font-size:11.5px;font-weight:500;color:#5E626E;border:1px solid #E6E7EC;border-radius:7px;padding:4px 9px";
+    span.textContent = t;
+    tags.appendChild(span);
+  });
+
+  updateCompleteGate();
+}
+
+function toggleStep(i) {
+  state.checked[i] = !state.checked[i];
+  renderQuest();
+}
+
+function updateCompleteGate() {
+  const total = (state.quest.steps || []).length;
+  const done = state.checked.filter(Boolean).length;
+  $("stepProgress").textContent = `${done}/${total}`;
+  const btn = $("btnComplete");
+  const allDone = total > 0 && done === total;
+  btn.disabled = !allDone;
+  if (allDone) {
+    btn.style.background = "#6C5CE7"; btn.style.cursor = "pointer";
+    btn.style.boxShadow = "0 5px 14px -4px rgba(108,92,231,.6)";
+    $("completeHint").style.display = "none";
+  } else {
+    btn.style.background = "#C9C3F0"; btn.style.cursor = "not-allowed";
+    btn.style.boxShadow = "none";
+    $("completeHint").style.display = "block";
+    $("completeHint").textContent = `ติ๊กให้ครบ (${done}/${total}) เพื่อปลดล็อก`;
+  }
+}
+
+function showQuestError(msg) {
+  $("questLoading").style.display = "none";
+  const el = $("questError");
+  el.style.display = "block";
+  el.style.background = "#FEF2F2";
+  el.style.borderColor = "#FECACA";
+  el.style.color = "#B91C1C";
+  el.innerHTML = `⚠️ ${esc(msg)}<br><span style="color:#9398A3;font-size:12px">ตรวจสอบ environment variables (GEMINI_API_KEY / SUPABASE_*) แล้วลองรีเฟรชอีกครั้ง</span>`;
+}
+
+// ---------- rate limit display ----------
+function fmtReset(info) {
+  if (!info.resetAt) return "";
+  const d = new Date(info.resetAt);
+  const diffMin = Math.max(0, Math.round((d - new Date()) / 60000));
+  let rel;
+  if (diffMin < 1) rel = "ไม่ถึง 1 นาที";
+  else if (diffMin < 60) rel = `อีกประมาณ ${diffMin} นาที`;
+  else rel = `อีกประมาณ ${Math.floor(diffMin / 60)} ชม. ${diffMin % 60} นาที`;
+  const local = d.toLocaleString("th-TH", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  return { rel, local };
+}
+
+function showRateLimit(info) {
+  state.rateLimited = info;
+  $("questLoading").style.display = "none";
+  $("questPending").style.display = "none";
+  $("questDone").style.display = "none";
+  $("questSkipped").style.display = "none";
+  const el = $("questError");
+  el.style.display = "block";
+  el.style.background = "#FFF8EC";
+  el.style.borderColor = "#F6E2B8";
+  el.style.color = "#92610A";
+  const t = fmtReset(info);
+  const head = info.quotaType === "day"
+    ? "ใช้โควต้า Gemini ฟรีของวันนี้ครบแล้ว 🪫"
+    : "ส่งคำขอถี่เกินไป (เกิน limit ต่อนาที) ⏳";
+  const when = info.quotaType === "day"
+    ? `ใช้ได้อีกครั้ง <b>${t.local} น.</b> (${t.rel})<br>โควต้าฟรีรีเซ็ตเที่ยงคืนเวลา Pacific`
+    : `ลองใหม่ได้ <b>${t.rel}</b>${info.retryDelaySec ? ` (~${info.retryDelaySec} วินาที)` : ""}`;
+  el.innerHTML = `
+    <div style="font-weight:600;margin-bottom:6px">${head}</div>
+    <div style="font-size:12.5px;line-height:1.6;font-weight:400">${when}</div>
+    <button id="btnRetryRate" class="press" style="margin-top:11px;padding:9px 16px;border-radius:9px;background:#92610A;border:none;color:#fff;font-weight:600;font-size:12.5px;cursor:pointer">ลองใหม่อีกครั้ง</button>
+    <div style="font-size:11px;color:#B58A3C;margin-top:8px;font-weight:400">💡 ไม่อยากรอ? สลับไปโมเดล gemini-2.5-flash-lite ในโค้ดได้ (โควต้าแยกก้อน) — ยังฟรี</div>`;
+  const btn = document.getElementById("btnRetryRate");
+  if (btn) btn.onclick = () => { showLoading(); init(); };
+}
+
+// ---------- roadmap ----------
+function openRoadmap() {
+  if (!state.roadmap) return;
+  const list = $("roadmapList");
+  list.innerHTML = "";
+  $("roadmapSub").textContent = `ตอนนี้ Day ${state.day} · ${state.phase.name}`;
+  state.roadmap.forEach((p, idx) => {
+    const isLast = idx === state.roadmap.length - 1;
+    const color = p.status === "done" ? "#15A06B" : p.status === "current" ? "#6C5CE7" : "#C4C7D0";
+    const bg = p.status === "current" ? "#F8F7FF" : "#fff";
+    const border = p.status === "current" ? "#D8D5F5" : "#ECEDF1";
+    const badge = p.status === "done"
+      ? `<span style="font-size:10.5px;font-weight:700;color:#15936A;background:#E9F7F0;padding:3px 9px;border-radius:6px">เสร็จแล้ว</span>`
+      : p.status === "current"
+      ? `<span style="font-size:10.5px;font-weight:700;color:#5546C9;background:#F1EFFE;padding:3px 9px;border-radius:6px">กำลังเรียน</span>`
+      : `<span style="font-size:10.5px;font-weight:700;color:#9398A3;background:#F0F1F4;padding:3px 9px;border-radius:6px">ยังไม่ถึง</span>`;
+    const dayRange = p.endDay ? `Day ${p.startDay}–${p.endDay}` : `Day ${p.startDay}+`;
+    const icon = p.status === "done"
+      ? `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`
+      : `<span class="mono" style="font-size:12px;font-weight:700;color:#fff">${p.number}</span>`;
+
+    const row = document.createElement("div");
+    row.style.cssText = "display:flex;gap:13px;align-items:stretch";
+    row.innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;flex:none">
+        <div style="width:30px;height:30px;border-radius:50%;background:${color};display:flex;align-items:center;justify-content:center;box-shadow:${p.status==="current"?"0 4px 12px -3px rgba(108,92,231,.5)":"none"}">${icon}</div>
+        ${isLast ? "" : `<div style="width:2px;flex:1;min-height:22px;background:${p.status==="done"?"#9BD9BE":"#E6E7EC"};margin:3px 0"></div>`}
+      </div>
+      <div style="flex:1;background:${bg};border:1px solid ${border};border-radius:14px;padding:13px 14px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px">
+          <span style="font-size:14.5px;font-weight:600;letter-spacing:-.01em">${esc(p.name)}</span>
+          ${badge}
+        </div>
+        <div style="font-size:11.5px;color:#9398A3;margin-bottom:8px">${dayRange}</div>
+        <div style="font-size:12.5px;line-height:1.5;color:#5E626E;margin-bottom:${p.status==="locked"?"0":"10px"}">${esc(p.goal)}</div>
+        ${p.status==="locked" ? "" : `
+          <div style="height:7px;border-radius:5px;background:#EDEEF2;overflow:hidden;margin-bottom:9px"><div style="height:100%;border-radius:5px;background:${color};width:${p.pct}%;transition:width .5s"></div></div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px">
+            ${p.courses.map((c)=>c.done
+              ? `<span style="font-size:10.5px;color:#15936A;background:#E9F7F0;border-radius:6px;padding:3px 8px;text-decoration:line-through">✓ ${esc(c.label)}</span>`
+              : `<span style="font-size:10.5px;color:#2563EB;background:#EEF6FF;border-radius:6px;padding:3px 8px">📘 ${esc(c.label)}</span>`).join("")}
+            ${p.projects.map((c)=>`<span style="font-size:10.5px;color:#C2620A;background:#FFF4E8;border-radius:6px;padding:3px 8px">🛠️ ${esc(c.label)}</span>`).join("")}
+          </div>`}
+      </div>`;
+    list.appendChild(row);
+  });
+  $("roadmapOverlay").style.display = "block";
+}
+function closeRoadmap() { $("roadmapOverlay").style.display = "none"; }
+
+// ---------- render: recent (อิงสถานะปัจจุบัน) ----------
+function renderRecent() {
+  const list = $("recentList");
+  list.innerHTML = "";
+  const items = [];
+  if (state.status === "done")
+    items.push({ title: state.quest.title, day: "วันนี้", meta: `+${state.quest.xp} XP`, done: true });
+  else if (state.status === "skip")
+    items.push({ title: state.quest.title, day: "วันนี้", meta: "ข้าม", done: false });
+
+  if (!items.length) {
+    list.innerHTML = `<div style="font-size:12.5px;color:#9398A3;background:#fff;border:1px solid #ECEDF1;border-radius:13px;padding:14px;text-align:center">ทำเควสวันนี้ให้เสร็จเพื่อเริ่มสะสมประวัติ</div>`;
+    return;
+  }
+  items.forEach((h) => {
+    const row = document.createElement("div");
+    row.style.cssText = "display:flex;align-items:center;gap:12px;background:#fff;border:1px solid #ECEDF1;border-radius:13px;padding:12px 14px;box-shadow:0 1px 2px rgba(20,22,40,.03)";
+    row.innerHTML = `
+      <div style="width:9px;height:9px;border-radius:50%;background:${h.done?"#16A34A":"#C4C7D0"};flex:none"></div>
+      <div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0">
+        <span style="font-size:13.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(h.title)}</span>
+        <span style="font-size:11.5px;color:#9398A3">${h.day}</span>
+      </div>
+      <span class="mono" style="font-size:12px;font-weight:600;color:${h.done?"#15936A":"#9398A3"}">${esc(h.meta)}</span>`;
+    list.appendChild(row);
+  });
+}
+
+// ---------- actions: complete / skip ----------
+async function act(action) {
+  if (state.status !== "pending") return;
+  if (action === "complete" && $("btnComplete").disabled) return; // ยังติ๊กไม่ครบ
+  const btnC = $("btnComplete"), btnS = $("btnSkip");
+  btnC.disabled = btnS.disabled = true;
+  btnC.style.opacity = btnS.style.opacity = ".6";
+  try {
+    const res = await fetch(`${API}/generate-quest`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action, progressId: state.progressId }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "อัปเดตไม่สำเร็จ");
+    state.stats = data.stats;
+    state.status = action === "complete" ? "done" : "skip";
+    renderStats();
+    renderQuest();
+    renderRecent();
+  } catch (err) {
+    alert("เกิดข้อผิดพลาด: " + err.message);
+    btnC.disabled = btnS.disabled = false;
+    btnC.style.opacity = btnS.style.opacity = "1";
+  }
+}
+
+// ---------- chat ----------
+function openChat() {
+  $("chatOverlay").style.display = "block";
+  renderChat();
+  setTimeout(() => $("chatInput").focus(), 350);
+}
+function closeChat() { $("chatOverlay").style.display = "none"; }
+
+function renderChat() {
+  const box = $("chatMsgs");
+  box.innerHTML = "";
+  state.messages.forEach((m) => {
+    const div = document.createElement("div");
+    if (m.role === "user") {
+      div.style.cssText = "align-self:flex-end;max-width:85%;background:#6C5CE7;border-radius:16px 4px 16px 16px;padding:12px 14px;font-size:13.5px;line-height:1.5;color:#fff;white-space:pre-wrap;box-shadow:0 4px 12px -4px rgba(108,92,231,.5)";
+      div.textContent = m.content;
+    } else {
+      div.className = "coach";
+      div.style.cssText = "align-self:flex-start;max-width:85%;background:#fff;border:1px solid #ECEDF1;border-radius:4px 16px 16px 16px;padding:12px 14px;font-size:13.5px;line-height:1.55;color:#2A2D38;box-shadow:0 1px 2px rgba(20,22,40,.04)";
+      div.innerHTML = mdLite(m.content);
+    }
+    box.appendChild(div);
+  });
+  if (state.pending) {
+    const t = document.createElement("div");
+    t.style.cssText = "align-self:flex-start;background:#fff;border:1px solid #ECEDF1;border-radius:4px 16px 16px 16px;padding:14px 16px;display:flex;gap:5px;box-shadow:0 1px 2px rgba(20,22,40,.04)";
+    t.innerHTML = [0,.2,.4].map(d=>`<span style="width:7px;height:7px;border-radius:50%;background:#B7BCC6;display:inline-block;animation:blink 1.2s infinite ${d}s"></span>`).join("");
+    box.appendChild(t);
+  }
+  // suggestions เฉพาะตอนเริ่ม
+  const sug = $("chatSuggestions");
+  if (state.messages.length <= 1 && !state.pending) {
+    sug.style.display = "flex";
+    sug.innerHTML = "";
+    ["ขอใบ้หน่อย", "อธิบายแนวคิด/คณิต", "ช่วยตรวจแผนของฉัน"].forEach((label) => {
+      const b = document.createElement("button");
+      b.className = "press";
+      b.style.cssText = "font-size:12.5px;font-weight:500;color:#5546C9;background:#F1EFFE;border:1px solid #E4DFFA;border-radius:999px;padding:8px 13px;cursor:pointer;font-family:inherit";
+      b.textContent = label;
+      b.onclick = () => ask(label);
+      sug.appendChild(b);
+    });
+  } else {
+    sug.style.display = "none";
+  }
+  box.scrollTop = box.scrollHeight + 999;
+}
+
+async function ask(text) {
+  const q = (text || "").trim();
+  if (!q || state.pending) return;
+  state.messages.push({ role: "user", content: q });
+  state.pending = true;
+  $("chatInput").value = "";
+  renderChat();
+  try {
+    const res = await fetch(`${API}/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        question: q,
+        progressId: state.progressId,
+        questContext: {
+          title: state.quest.title,
+          description: state.quest.description,
+          difficulty: state.quest.difficulty,
+          steps: state.quest.steps,
+          resources: state.quest.resources,
+          phase: state.phase ? state.phase.name : null,
+        },
+        history: state.messages.filter((m) => m.role && m.content),
+      }),
+    });
+    const data = await res.json();
+    state.pending = false;
+    let reply;
+    if (res.ok) {
+      reply = data.reply;
+    } else if (res.status === 429 && data.rateLimited) {
+      const t = fmtReset(data.rateLimited);
+      reply = data.rateLimited.quotaType === "day"
+        ? `ตอนนี้ใช้โควต้า Gemini ฟรีของวันนี้ครบแล้วครับ 🪫\nโค้ชจะกลับมาตอบได้อีกครั้ง ${t.local} น. (${t.rel})`
+        : `ส่งคำถามถี่ไปนิดครับ ⏳ รออีก ${t.rel} แล้วลองใหม่นะ`;
+    } else {
+      reply = `ขออภัย เชื่อมต่อโค้ชไม่ได้: ${data.error || "ลองใหม่อีกครั้ง"}`;
+    }
+    state.messages.push({ role: "assistant", content: reply });
+    renderChat();
+  } catch (err) {
+    state.pending = false;
+    state.messages.push({ role: "assistant", content: "เชื่อมต่อโค้ชไม่ได้ตอนนี้ ลองใหม่อีกสักครู่นะครับ" });
+    renderChat();
+  }
+}
+
+// markdown แบบเบา ๆ สำหรับคำตอบโค้ช (code block, inline code, ตัวหนา)
+function mdLite(text) {
+  let t = esc(text);
+  t = t.replace(/```(\w+)?\n?([\s\S]*?)```/g, (_, lang, code) => `<pre><code>${code.replace(/\n$/,"")}</code></pre>`);
+  t = t.replace(/`([^`]+)`/g, "<code>$1</code>");
+  t = t.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  t = t.replace(/\n/g, "<br>");
+  return t;
+}
+
+// ---------- settings ----------
+function openSettings() {
+  document.querySelectorAll(".setField").forEach((field) => {
+    const key = field.dataset.key;
+    const box = field.querySelector(".setOpts");
+    box.innerHTML = "";
+    PROFILE_OPTS[key].forEach((opt) => {
+      const sel = state.profile[key] === opt;
+      const b = document.createElement("button");
+      b.className = "press setOpt";
+      b.dataset.key = key; b.dataset.val = opt;
+      b.style.cssText = `text-align:left;font-size:12.5px;line-height:1.4;padding:11px 13px;border-radius:11px;cursor:pointer;font-family:inherit;border:1.5px solid ${sel?"#6C5CE7":"#E2E3E9"};background:${sel?"#F1EFFE":"#fff"};color:${sel?"#5546C9":"#3A3D48"};font-weight:${sel?"600":"500"}`;
+      b.textContent = opt;
+      b.onclick = () => { state.profile[key] = opt; openSettings(); };
+      box.appendChild(b);
+    });
+  });
+
+  // คอร์สที่เรียนจบแล้ว (checklist จากทุก phase ใน roadmap)
+  const doneBox = $("doneOpts");
+  doneBox.innerHTML = "";
+  const allCourses = [];
+  (state.roadmap || []).forEach((p) => (p.courses || []).forEach((c) => {
+    if (!allCourses.includes(c.label)) allCourses.push(c.label);
+  }));
+  if (!allCourses.length) {
+    doneBox.innerHTML = `<div style="font-size:11.5px;color:#B3B7C0">เปิดแอปให้โหลด roadmap ก่อน แล้วคอร์สจะแสดงที่นี่</div>`;
+  }
+  if (!Array.isArray(state.profile.done)) state.profile.done = [];
+  allCourses.forEach((label) => {
+    const on = state.profile.done.includes(label);
+    const b = document.createElement("button");
+    b.className = "press";
+    b.style.cssText = `display:flex;align-items:center;gap:9px;text-align:left;font-size:12px;line-height:1.35;padding:9px 11px;border-radius:10px;cursor:pointer;font-family:inherit;border:1.5px solid ${on?"#15A06B":"#E2E3E9"};background:${on?"#E9F7F0":"#fff"};color:${on?"#0F7A52":"#3A3D48"};font-weight:${on?"600":"500"}`;
+    b.innerHTML = `<span style="width:17px;height:17px;border-radius:5px;border:2px solid ${on?"#15A06B":"#D4D7E0"};background:${on?"#15A06B":"#fff"};flex:none;display:flex;align-items:center;justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" style="opacity:${on?1:0}"><path d="M20 6 9 17l-5-5"/></svg></span><span>${esc(label)}</span>`;
+    b.onclick = () => {
+      const i = state.profile.done.indexOf(label);
+      if (i === -1) state.profile.done.push(label); else state.profile.done.splice(i, 1);
+      openSettings();
+    };
+    doneBox.appendChild(b);
+  });
+
+  $("settingsOverlay").style.display = "block";
+}
+function closeSettings() { $("settingsOverlay").style.display = "none"; }
+async function saveSettings() {
+  saveProfile(state.profile);
+  closeSettings();
+  showLoading();
+  await init(true); // fresh=1 -> สร้างเควสใหม่ตามโปรไฟล์
+}
+
+// ---------- wire events ----------
+$("btnComplete").onclick = () => act("complete");
+$("btnSkip").onclick = () => act("skip");
+$("btnOpenChat").onclick = openChat;
+$("btnCloseChat").onclick = closeChat;
+$("chatBackdrop").onclick = closeChat;
+$("btnSend").onclick = () => ask($("chatInput").value);
+$("chatInput").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); ask($("chatInput").value); } });
+$("btnSettings").onclick = openSettings;
+$("btnCloseSettings").onclick = closeSettings;
+$("settingsBackdrop").onclick = closeSettings;
+$("btnSaveSettings").onclick = saveSettings;
+$("phaseCard").onclick = openRoadmap;
+$("btnCloseRoadmap").onclick = closeRoadmap;
+$("roadmapBackdrop").onclick = closeRoadmap;
+
+init();
+</script>
+</body>
+</html>
