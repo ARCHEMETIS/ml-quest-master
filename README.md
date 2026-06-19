@@ -1,64 +1,208 @@
-# ML Quest Master 🎯⚡
+<div align="center">
 
-แอปเรียน Machine Learning แบบ **เควสรายวัน** — เปิดแอปแล้ว Gemini สร้างเควสวันนี้ให้, กดทำเสร็จเพื่อเก็บ XP/streak, และถาม **Quest Coach** ได้ตลอด
+# ⚡ ML Quest Master
 
-- **Frontend:** `index.html` ไฟล์เดียว (Tailwind CDN + Vanilla JS)
-- **Backend:** Netlify Functions (`generate-quest.js`, `chat.js`)
-- **Database:** Supabase (`progress`, `chat_history`)
-- **AI:** Gemini 2.0 Flash
+**An AI-powered daily-quest app that turns learning Machine Learning into a guided, gamified journey.**
 
-## โครงสร้างโปรเจค
+Every day the app generates a single, actionable quest tailored to your level and position on a Kaggle-based roadmap — complete with real resource links, a step-by-step checklist, and an AI coach you can chat with in your own language.
+
+[![Frontend](https://img.shields.io/badge/Frontend-Vanilla_JS_+_Tailwind-38BDF8?logo=tailwindcss&logoColor=white)](#tech-stack)
+[![Functions](https://img.shields.io/badge/Backend-Netlify_Functions-00C7B7?logo=netlify&logoColor=white)](#tech-stack)
+[![Database](https://img.shields.io/badge/Database-Supabase-3ECF8E?logo=supabase&logoColor=white)](#tech-stack)
+[![AI](https://img.shields.io/badge/AI-Google_Gemini-8E75F0?logo=googlegemini&logoColor=white)](#tech-stack)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](#license)
+
+</div>
+
+---
+
+## 📸 Preview
+
+> A pixel-accurate, mobile-style single-screen UI (390 × 844) with a purple `#6C5CE7` theme, the Geist typeface, and a slide-up coach chat.
+
+<!-- Add a screenshot/GIF here for the portfolio:
+     1. Run `netlify dev`, open http://localhost:8888
+     2. Capture the screen and save it as docs/screenshot.png
+     3. Uncomment the line below
+-->
+<!-- ![ML Quest Master screenshot](docs/screenshot.png) -->
+
+```
+┌─────────────────────────────┐
+│  ⚡ ML Quest Master   ⚙️ 🔥12 │
+│  ───────────────────────────│
+│  CURRENT PHASE      ดู Roadmap›│
+│  Python & Data Wrangling  11%│
+│  ▓▓▓░░░░░░░ ░░░░ ░░░░ ░░░░    │
+│  ───────────────────────────│
+│  2,480 XP │ 47 Quests │ A−    │
+│  ───────────────────────────│
+│  TODAY'S QUEST        ~45 min │
+│  [Intermediate] [project]     │
+│  Clean missing values on…     │
+│  🔗 Kaggle Learn: Data Cleaning│
+│  ☑ Step 1   ☐ Step 2  (3/5)   │
+│  +120 XP   [Skip] [ Complete ]│
+└─────────────────────────────┘
+```
+
+---
+
+## ✨ Features
+
+- **AI quest generation** — Gemini plans the next quest from your profile, current roadmap phase, and recent history, returning strict JSON (`title`, `steps`, `resources`, `deliverable`, `verify`, `difficulty`, `xp`…).
+- **Real, curated resources** — every quest links to *real* Kaggle Learn courses / competitions. URLs are whitelisted server-side so the model can never hallucinate a broken link.
+- **Completion gating** — XP is only awarded after the user ticks off **every** step in the checklist, so progress reflects real work, not a single click.
+- **Kaggle-based roadmap** — a 4-phase curriculum (Python & Data Wrangling → Core ML → Deep Learning → Specialize & Portfolio) with a visual timeline showing where you are.
+- **Skip courses you already know** — mark completed courses; the planner skips them and the roadmap strikes them through.
+- **AI Quest Coach** — a slide-up chat that answers in Thai, prefers Socratic hints over full solutions, and is aware of the current quest's context.
+- **Gamification** — XP, streaks, completion-based phase progress, and a letter grade derived from your completion rate.
+- **Graceful rate-limit handling** — when the AI quota is hit, the UI explains *which* quota (per-minute vs per-day) and *exactly when* access returns, converted to local time.
+
+---
+
+## 🏗️ Architecture
+
+```mermaid
+flowchart LR
+    U[Browser<br/>index.html<br/>Vanilla JS + Tailwind] -->|GET ?profile| GQ[generate-quest.js]
+    U -->|POST complete/skip| GQ
+    U -->|POST question| C[chat.js]
+
+    subgraph Netlify Functions
+        GQ
+        C
+    end
+
+    GQ -->|REST| DB[(Supabase<br/>progress · chat_history)]
+    C  -->|REST| DB
+    GQ -->|generateContent| G[Google Gemini]
+    C  -->|generateContent| G
+```
+
+**Request flow**
+
+1. On load, the frontend sends the locally-stored learner profile to `generate-quest`.
+2. The function reads the latest `progress` rows, decides the current roadmap phase, and **reuses today's pending quest if one exists** (saving an API call) or asks Gemini to plan a new one.
+3. The quest is persisted to Supabase and returned with computed `stats` and a full `roadmap`.
+4. Completing/skipping a quest and chatting with the coach are separate calls that update Supabase and the UI.
+
+---
+
+## 🧠 Engineering Highlights
+
+These are the decisions I'm most proud of as an engineer:
+
+| Challenge | Solution |
+|---|---|
+| **LLMs hallucinate URLs** | The backend keeps an allow-list of real Kaggle URLs per phase and filters the model's `resources` against it, falling back to a known-good link. The model *cannot* emit a broken link. |
+| **"XP increased before I did anything"** | Re-modeled progress: the phase % is computed from **completed quests**, not the day counter, and the *Complete* button is disabled until every checklist step is ticked. |
+| **Free-tier quota limits** | Today's quest is cached as a `pending` row and reused on refresh, so reloading never burns quota. A `fresh=1` flag forces regeneration only when the profile changes. |
+| **Rate-limit UX** | The 429 body is parsed to distinguish *per-minute* vs *per-day* quotas; the daily reset is computed at Pacific midnight and surfaced to the user in their local time, with a one-line model-swap escape hatch (`GEMINI_MODEL` env). |
+| **Secrets never touch the client** | Status mutations are folded into the same function as generation so the Supabase key stays server-side; only public-safe data reaches the browser. `.env` is git-ignored. |
+| **Resilient to schema drift** | The live database differs from the reference schema (UUID ids, integer `phase`); the code discovers and adapts to the real column types rather than assuming. |
+| **Robust JSON parsing** | Gemini output is requested as `application/json` and additionally stripped of code fences / surrounding prose, then normalized & clamped (xp, time, difficulty) before use. |
+| **Self-healing state** | A malformed or legacy `pending` quest is detected and regenerated automatically instead of crashing the screen. |
+
+---
+
+## 🧰 Tech Stack
+
+| Layer | Choice | Why |
+|---|---|---|
+| Frontend | **Single `index.html`** — Tailwind (CDN) + Vanilla JS | Zero build step, instant deploy, full control over the pixel-perfect mobile UI |
+| Backend | **Netlify Functions** (Node 18, esbuild) | Serverless, no server to run, keeps API keys off the client |
+| Database | **Supabase** (Postgres + REST) | Free tier, instant REST API, row-level security |
+| AI | **Google Gemini** (`gemini-2.5-flash`) | Fast, JSON mode, generous free tier (model is env-configurable) |
+| Hosting | **Netlify** | Git-based deploys, native function support via `netlify.toml` |
+
+---
+
+## 🗂️ Project Structure
+
 ```
 ml-quest/
-├── index.html
-├── netlify.toml
-├── supabase-schema.sql
-├── .env.example
-└── netlify/
-    └── functions/
-        ├── generate-quest.js
-        └── chat.js
+├── index.html                      # Entire frontend (UI + state + API calls)
+├── netlify.toml                    # Functions config + /netlify/functions/* redirect
+├── supabase-schema.sql             # Tables, indexes, RLS policies
+├── .env.example                    # Env var template (no secrets)
+└── netlify/functions/
+    ├── generate-quest.js           # Roadmap, quest generation, complete/skip, stats
+    └── chat.js                     # Quest Coach (Thai, context-aware)
 ```
 
-## ติดตั้ง
+---
 
-### 1) Supabase
-1. สร้างโปรเจคที่ https://supabase.com
-2. เปิด **SQL Editor** → รันไฟล์ `supabase-schema.sql`
-3. คัดลอก **Project URL** และ **anon public key** จาก Settings → API
+## 🗺️ Curriculum (Roadmap)
 
-### 2) Gemini API key
-ขอที่ https://aistudio.google.com/app/apikey
+| Phase | Focus | Anchored on |
+|---|---|---|
+| 1. Python & Data Wrangling | Python, Pandas, cleaning, visualization | Kaggle Learn |
+| 2. Core ML | Regression, trees, feature engineering, evaluation | Kaggle Learn + Titanic / House Prices |
+| 3. Deep Learning | Neural nets, CV, NLP | Kaggle Learn + Digit Recognizer / NLP |
+| 4. Specialize & Portfolio | Time series, SQL, explainability, end-to-end projects | Kaggle Datasets |
 
-### 3) Environment variables
-ตั้งค่าใน Netlify (Site settings → Environment variables) หรือไฟล์ `.env` สำหรับ local:
-```
+Phase boundaries and resources live in `PHASES` inside `generate-quest.js` and are easy to extend.
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- A [Supabase](https://supabase.com) project
+- A [Google Gemini API key](https://aistudio.google.com/app/apikey)
+- [Netlify CLI](https://docs.netlify.com/cli/get-started/): `npm i -g netlify-cli`
+
+### 1. Database
+Open the Supabase **SQL Editor** and run [`supabase-schema.sql`](supabase-schema.sql).
+
+### 2. Environment variables
+Copy `.env.example` to `.env` and fill in:
+```bash
 GEMINI_API_KEY=...
 SUPABASE_URL=https://xxxx.supabase.co
 SUPABASE_ANON_KEY=...
+# optional: GEMINI_MODEL=gemini-2.5-flash-lite
 ```
 
-## รัน local
+### 3. Run locally
 ```bash
-npm i -g netlify-cli
-cd ml-quest
 netlify dev
+# → http://localhost:8888
 ```
-เปิด http://localhost:8888
 
-## Deploy
-ลาก folder ขึ้น Netlify หรือ `netlify deploy --prod` (อย่าลืมตั้ง env vars บน Netlify)
+### 4. Deploy
+Import the repo on Netlify (it reads `netlify.toml` automatically), then add the three environment variables under **Site settings → Environment variables**.
 
-## การทำงาน
+---
 
-**`generate-quest.js`**
-- `GET` → ดึง progress ล่าสุด, ถ้ามีเควส `pending` ของวันนี้คืนอันเดิม, ไม่งั้นให้ Gemini สร้างเควสใหม่ (JSON: title, description, objectives, tags, difficulty, time_minutes, xp) แล้วบันทึกลง Supabase → คืน `quest`, `day`, `phase`, `stats`
-- `POST {action:"complete"|"skip", progressId}` → อัปเดต status (+XP เมื่อ complete) คืน `stats` ล่าสุด
-  *(รวม action ไว้ในฟังก์ชันนี้เพื่อไม่ต้องเปิด anon key สู่ frontend)*
+## 🔌 API
 
-**`chat.js`**
-- `POST {question, questContext, history, progressId}` → ให้ Gemini ตอบเป็น Quest Coach **ภาษาไทย** กระชับ มีโค้ดเมื่อจำเป็น และบันทึกลง `chat_history`
+### `GET /netlify/functions/generate-quest`
+Returns today's quest (reused if pending, else freshly generated), plus `day`, `phase`, `roadmap`, `profile`, and `stats`. Accepts the profile as query params (`level`, `goal`, `time`, `style`, `done`, `fresh`).
 
-## หลักสูตร (phase)
-1. Foundations · 2. Core ML · 3. Deep Learning · 4. Advanced & MLOps
-(`day` เพิ่มทีละ 1 ต่อเควส, phase คำนวณจาก `day` ใน `generate-quest.js` — ปรับจำนวนวันได้ที่ `PHASES`)
+### `POST /netlify/functions/generate-quest`
+`{ action: "complete" | "skip", progressId }` → updates status (+XP on complete) and returns fresh `stats`.
+
+### `POST /netlify/functions/chat`
+`{ question, questContext, history, progressId }` → a Thai, context-aware coach reply; the exchange is stored in `chat_history`.
+
+---
+
+## 🗃️ Data Model
+
+```sql
+progress(id, day, phase, topic, quest_text, status, xp, created_at)
+chat_history(id, progress_id, role, message, created_at)
+```
+`quest_text` stores the full quest JSON; `status` is `pending | done | skip`.
+
+---
+
+## License
+
+[MIT](LICENSE) — built as a learning & portfolio project.
+
+<div align="center">
+<sub>Built with Vanilla JS, Netlify Functions, Supabase, and Google Gemini.</sub>
+</div>
