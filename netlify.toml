@@ -11,3 +11,9 @@
   from = "/netlify/functions/*"
   to = "/.netlify/functions/:splat"
   status = 200
+
+# เสิร์ฟ web app manifest ด้วย MIME type ที่ถูกต้อง (ไม่งั้น browser อ่านไอคอน PWA ไม่ได้)
+[[headers]]
+  for = "/manifest.webmanifest"
+  [headers.values]
+    Content-Type = "application/manifest+json"
