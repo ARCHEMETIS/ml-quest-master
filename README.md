@@ -4,8 +4,12 @@
 
 **An AI-powered daily-quest app that turns learning Machine Learning into a guided, gamified journey.**
 
-Every day the app generates a single, actionable quest tailored to your level and position on a Kaggle-based roadmap — complete with real resource links, a step-by-step checklist, and an AI coach you can chat with in your own language.
+Every day the app generates a single, actionable quest tailored to your level and position on a Kaggle-based roadmap — complete with real resource links, a step-by-step checklist, and an AI coach you can chat with in your own language. Installable as a PWA — add it to your phone's home screen and it runs full-screen like a native app.
 
+### [🚀 Live Demo → ml-quest-master.netlify.app](https://ml-quest-master.netlify.app)
+
+[![Live](https://img.shields.io/badge/Live-Demo-6C5CE7?logo=netlify&logoColor=white)](https://ml-quest-master.netlify.app)
+[![PWA](https://img.shields.io/badge/PWA-installable-5A0FC8?logo=pwa&logoColor=white)](https://ml-quest-master.netlify.app)
 [![Frontend](https://img.shields.io/badge/Frontend-Vanilla_JS_+_Tailwind-38BDF8?logo=tailwindcss&logoColor=white)](#tech-stack)
 [![Functions](https://img.shields.io/badge/Backend-Netlify_Functions-00C7B7?logo=netlify&logoColor=white)](#tech-stack)
 [![Database](https://img.shields.io/badge/Database-Supabase-3ECF8E?logo=supabase&logoColor=white)](#tech-stack)
@@ -38,6 +42,7 @@ A pixel-accurate, mobile-style single-screen UI (390 × 844) with a purple `#6C5
 - **AI Quest Coach** — a slide-up chat that answers in Thai, prefers Socratic hints over full solutions, and is aware of the current quest's context.
 - **Gamification** — XP, streaks, completion-based phase progress, and a letter grade derived from your completion rate.
 - **Graceful rate-limit handling** — when the AI quota is hit, the UI explains *which* quota (per-minute vs per-day) and *exactly when* access returns, converted to local time.
+- **Installable PWA** — responsive full-screen layout on phones, a web manifest, app icons, and a service worker (offline app shell) so it can be added to the home screen and launched like a native app.
 
 ---
 
@@ -83,6 +88,7 @@ These are the decisions I'm most proud of as an engineer:
 | **Resilient to schema drift** | The live database differs from the reference schema (UUID ids, integer `phase`); the code discovers and adapts to the real column types rather than assuming. |
 | **Robust JSON parsing** | Gemini output is requested as `application/json` and additionally stripped of code fences / surrounding prose, then normalized & clamped (xp, time, difficulty) before use. |
 | **Self-healing state** | A malformed or legacy `pending` quest is detected and regenerated automatically instead of crashing the screen. |
+| **PWA correctness** | Installability bugs were debugged from production: the manifest needed an `application/manifest+json` MIME type (set via Netlify headers) and the home-screen icon required a non-blank, correctly-sized PNG — both verified against the deployed URL. |
 
 ---
 
