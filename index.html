@@ -329,6 +329,9 @@
       </div>
     </div>
 
+    <!-- toast -->
+    <div id="toast" style="display:none;position:absolute;left:50%;bottom:70px;transform:translateX(-50%);z-index:90;background:#1B1C22;color:#fff;font-size:12.5px;font-weight:500;line-height:1.4;padding:11px 16px;border-radius:12px;box-shadow:0 8px 24px -6px rgba(0,0,0,.4);max-width:80%;text-align:center"></div>
+
     <!-- home indicator -->
     <div id="homebar" style="position:absolute;bottom:0;left:0;right:0;z-index:60;height:34px;display:flex;justify-content:center;align-items:flex-end;padding-bottom:8px;pointer-events:none">
       <div style="width:139px;height:5px;border-radius:100px;background:rgba(0,0,0,.25)"></div>
@@ -917,11 +920,25 @@ function openSettings() {
   $("settingsOverlay").style.display = "block";
 }
 function closeSettings() { $("settingsOverlay").style.display = "none"; }
+
+let _toastTimer;
+function showToast(msg) {
+  const t = $("toast");
+  t.textContent = msg;
+  t.style.display = "block";
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => { t.style.display = "none"; }, 3000);
+}
+
 async function saveSettings() {
   saveProfile(state.profile);
   closeSettings();
   showLoading();
   await init(true); // fresh=1 -> สร้างเควสใหม่ตามโปรไฟล์
+  // ถ้าวันนี้ทำเควสเสร็จแล้ว (locked) จะยังไม่สร้างใหม่ -> แจ้งให้ชัด (#1 round2)
+  showToast(state.lockedUntilTomorrow
+    ? "บันทึกแล้ว ✓ จะมีผลกับเควสพรุ่งนี้"
+    : "บันทึกแล้ว ✓ สร้างเควสใหม่ให้ตามค่านี้");
 }
 
 // ---------- wire events ----------

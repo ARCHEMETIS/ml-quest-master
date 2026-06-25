@@ -501,6 +501,8 @@ exports.handler = async (event) => {
       // ทำเควสของวันนี้ไปแล้ว -> ล็อกจนถึงพรุ่งนี้ (#1 บังคับ 1 เควส/วัน + กัน quota)
       quest = lockedQuest; progressId = top.id; status = top.status;
       lockedUntilTomorrow = true; nextResetAt = nextMidnightISO(TZ);
+      // โชว์เลขเควสที่ "กำลังแสดง" ไม่ใช่เลขถัดไป: done นับใน doneCount แล้ว, skip ยังไม่นับ
+      day = top.status === "done" ? doneCount : doneCount + 1;
     } else {
       // ไม่มีเควส หรือเควสล่าสุด resolved ของวันก่อน -> สร้างเควสของวันนี้
       const r = await createQuest(phase);
