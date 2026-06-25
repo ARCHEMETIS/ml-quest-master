@@ -144,12 +144,30 @@ function tzOffsetMs(date, tz) {
   const asUTC = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second);
   return asUTC - date.getTime();
 }
-function nextPacificMidnightISO() {
+function nextMidnightISO(tz) {
   const now = new Date();
-  const off = tzOffsetMs(now, "America/Los_Angeles");
+  const off = tzOffsetMs(now, tz);
   const wallNow = new Date(now.getTime() + off);
   const nextWall = Date.UTC(wallNow.getUTCFullYear(), wallNow.getUTCMonth(), wallNow.getUTCDate() + 1, 0, 0, 0);
   return new Date(nextWall - off).toISOString();
+}
+const nextPacificMidnightISO = () => nextMidnightISO("America/Los_Angeles");
+
+// Supabase คืน created_at เป็น UTC แต่บางทีไม่มี marker timezone -> เติม Z กัน parse ผิด
+function parseTs(s) {
+  if (typeof s !== "string") return new Date(s);
+  return new Date(/(Z|[+-]\d\d:?\d\d)$/.test(s) ? s : s + "Z");
+}
+
+// วันที่แบบ "YYYY-MM-DD" ตามโซนเวลาไทย (ใช้ตัดสินว่า "วันนี้" / นับ streak)
+const TZ = "Asia/Bangkok";
+function localDateStr(d) {
+  const off = tzOffsetMs(d, TZ);
+  return new Date(d.getTime() + off).toISOString().slice(0, 10);
+}
+function prevDateStr(s) {
+  const [y, m, dd] = s.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, dd - 1)).toISOString().slice(0, 10);
 }
 function parseRateLimit(bodyText) {
   let detail = null;
@@ -209,14 +227,23 @@ function computeStats(rows) {
   const xp = done.reduce((s, r) => s + (Number(r.xp) || 0), 0);
   const quests = done.length;
 
+  // streak = จำนวน "วันติดต่อกัน" (ตามปฏิทินไทย) ที่มีเควส resolved (done/skip)
+  // นับถอยจากวันล่าสุด; ถ้าขาดวันก็หยุด (skip ไม่ทำให้ขาด เพราะยังถือว่ามาเล่น)
+  const resolved = rows.filter((r) => r.status === "done" || r.status === "skip");
+  const dates = [...new Set(resolved.map((r) => localDateStr(parseTs(r.created_at))))].sort().reverse();
   let streak = 0;
-  for (const r of rows) {
-    if (r.status === "pending") continue;
-    if (r.status === "done" || r.status === "skip") streak++;
-    else break;
+  if (dates.length) {
+    const today = localDateStr(new Date());
+    // ยอมให้ streak ยังนับได้ถ้าวันล่าสุดคือวันนี้หรือเมื่อวาน (ยังไม่ขาด)
+    let expected = dates[0] === today ? today : (dates[0] === prevDateStr(today) ? dates[0] : null);
+    if (expected) {
+      for (const d of dates) {
+        if (d === expected) { streak++; expected = prevDateStr(expected); }
+        else break;
+      }
+    }
   }
 
-  const resolved = rows.filter((r) => r.status === "done" || r.status === "skip");
   const rate = resolved.length ? done.length / resolved.length : 1;
   let grade = "A";
   if (rate >= 0.95) grade = "A";
@@ -378,6 +405,19 @@ exports.handler = async (event) => {
       const target = await sb(`progress?id=eq.${progressId}&select=*`);
       if (!target.length) return json(404, { error: "ไม่พบเควส" });
       const row = target[0];
+      // กันตัดสินซ้ำ (idempotent) — ถ้าไม่ pending แล้ว คืน stats เฉย ๆ
+      if (row.status !== "pending") {
+        return json(409, { error: "เควสนี้ถูกตัดสินไปแล้ว", stats: computeStats(await sb(`progress?select=*&order=day.desc`)) });
+      }
+      // complete: ตรวจว่าทำ checklist ครบจริง (กันกดลัด) — เทียบกับจำนวน steps ที่เก็บไว้
+      if (action === "complete") {
+        let total = 0;
+        try { total = (JSON.parse(row.quest_text).steps || []).length; } catch {}
+        const stepsDone = Number(body.steps_done) || 0;
+        if (total > 0 && stepsDone < total) {
+          return json(400, { error: "ยังทำ checklist ไม่ครบทุกขั้นตอน" });
+        }
+      }
       const patch =
         action === "complete" ? { status: "done", xp: row.xp } : { status: "skip", xp: 0 };
       await sb(`progress?id=eq.${progressId}`, {
@@ -394,74 +434,83 @@ exports.handler = async (event) => {
     const fresh = qs.fresh === "1"; // บังคับสร้างใหม่ (เช่น หลังเปลี่ยนโปรไฟล์)
     const profile = readProfile(qs);
     const rows = await sb(`progress?select=*&order=day.desc`);
-
-    let day, quest, progressId, phase;
-
-    // เควส pending ที่ใช้ซ้ำได้ ต้องเป็น "รูปแบบใหม่" (มี steps) จึงจะ reuse
     const top = rows[0];
+
+    const doneCount = rows.filter((r) => r.status === "done").length;
+    const position = doneCount + 1; // ตำแหน่งบน roadmap อิง "เควสที่ทำเสร็จ" ไม่ใช่เลขลำดับ (#2)
+    const todayStr = localDateStr(new Date());
+
+    // % / สถานะ roadmap อิงจำนวนที่ทำเสร็จต่อ phase
+    const doneByPhase = {};
+    rows.forEach((r) => { if (r.status === "done") doneByPhase[r.phase] = (doneByPhase[r.phase] || 0) + 1; });
+
+    // สร้างเควสใหม่ + insert (กัน day ซ้ำตอนยิงพร้อมกัน #5)
+    async function createQuest(phaseObj) {
+      const seq = (rows[0] ? rows[0].day : 0) + 1; // เลขลำดับใน DB (monotonic, ไว้ order)
+      const recentTitles = rows.slice(0, 5)
+        .map((r) => { try { return JSON.parse(r.quest_text).title; } catch { return null; } })
+        .filter(Boolean);
+      const q = await generateQuest(position, phaseObj, recentTitles, profile);
+      try {
+        const inserted = await sb(`progress`, {
+          method: "POST",
+          headers: { Prefer: "return=representation" },
+          body: JSON.stringify({
+            day: seq, phase: phaseObj.number, topic: q.title,
+            quest_text: JSON.stringify(q), status: "pending", xp: q.xp,
+          }),
+        });
+        return inserted[0];
+      } catch (e) {
+        // race: day ซ้ำ (unique constraint) -> ใช้เควส pending ที่อีก request สร้างไว้แทน
+        const exist = await sb(`progress?day=eq.${seq}&select=*`);
+        if (exist.length) return exist[0];
+        throw e;
+      }
+    }
+
+    let day = position, quest, progressId, status = "pending";
+    let lockedUntilTomorrow = false, nextResetAt = null;
+    const phase = phaseForDay(position);
+
+    // เควส pending รูปแบบใหม่ (ยังทำไม่เสร็จ) -> ใช้ต่อ (carry over ข้ามวันได้)
     let reusable = null;
     if (!fresh && top && top.status === "pending" && top.quest_text) {
       try {
         const q = JSON.parse(top.quest_text);
-        if (q && q.title && Array.isArray(q.steps) && q.steps.length) {
-          reusable = normalizeQuest(q, q.resources || []);
-        }
-      } catch {
-        reusable = null;
-      }
+        if (q && q.title && Array.isArray(q.steps) && q.steps.length) reusable = normalizeQuest(q, q.resources || []);
+      } catch { reusable = null; }
+    }
+
+    // เควสวันนี้ที่ resolved แล้ว (เปิด parse ได้) -> ใช้ล็อกถึงพรุ่งนี้
+    let lockedQuest = null;
+    if (top && (top.status === "done" || top.status === "skip") &&
+        localDateStr(parseTs(top.created_at)) === todayStr) {
+      try { lockedQuest = normalizeQuest(JSON.parse(top.quest_text), JSON.parse(top.quest_text).resources || []); } catch { lockedQuest = null; }
     }
 
     if (reusable) {
-      day = top.day;
-      phase = phaseForDay(day);
-      quest = reusable;
-      progressId = top.id;
+      quest = reusable; progressId = top.id;
+    } else if (top && top.status === "pending") {
+      // pending เสีย/เก่า หรือสั่ง fresh -> ลบแล้วสร้างแทน (ตำแหน่งเดิม ไม่ใช่วันใหม่)
+      await sb(`progress?id=eq.${top.id}`, { method: "DELETE", headers: { Prefer: "return=minimal" } });
+      rows.shift();
+      const r = await createQuest(phase);
+      progressId = r.id; quest = JSON.parse(r.quest_text); // เก็บแบบ normalize แล้ว
+    } else if (lockedQuest) {
+      // ทำเควสของวันนี้ไปแล้ว -> ล็อกจนถึงพรุ่งนี้ (#1 บังคับ 1 เควส/วัน + กัน quota)
+      quest = lockedQuest; progressId = top.id; status = top.status;
+      lockedUntilTomorrow = true; nextResetAt = nextMidnightISO(TZ);
     } else {
-      // ลบ row pending ที่เสีย/รูปแบบเก่า เพื่อไม่ให้ค้าง
-      if (top && top.status === "pending") {
-        await sb(`progress?id=eq.${top.id}`, { method: "DELETE", headers: { Prefer: "return=minimal" } });
-        rows.shift();
-      }
-      const lastDay = rows.length ? rows[0].day : 0;
-      day = lastDay + 1;
-      phase = phaseForDay(day);
-
-      const recentTitles = rows
-        .slice(0, 5)
-        .map((r) => {
-          try {
-            return JSON.parse(r.quest_text).title;
-          } catch {
-            return null;
-          }
-        })
-        .filter(Boolean);
-
-      quest = await generateQuest(day, phase, recentTitles, profile);
-
-      const inserted = await sb(`progress`, {
-        method: "POST",
-        headers: { Prefer: "return=representation" },
-        body: JSON.stringify({
-          day,
-          phase: phase.number, // คอลัมน์ phase เป็น integer
-          topic: quest.title,
-          quest_text: JSON.stringify(quest),
-          status: "pending",
-          xp: quest.xp,
-        }),
-      });
-      progressId = inserted[0].id;
-      rows.unshift(inserted[0]);
+      // ไม่มีเควส หรือเควสล่าสุด resolved ของวันก่อน -> สร้างเควสของวันนี้
+      const r = await createQuest(phase);
+      progressId = r.id; quest = JSON.parse(r.quest_text); // เก็บแบบ normalize แล้ว
     }
 
-    // % ความคืบหน้าอิง "เควสที่ทำเสร็จ" ต่อ phase (ไม่ใช่เลขวัน)
-    const doneByPhase = {};
-    rows.forEach((r) => { if (r.status === "done") doneByPhase[r.phase] = (doneByPhase[r.phase] || 0) + 1; });
     phase.pct = phasePct(phase.number, doneByPhase);
 
     return json(200, {
-      day, phase, progressId, quest, profile,
+      day, phase, progressId, quest, profile, status, lockedUntilTomorrow, nextResetAt,
       roadmap: buildRoadmap(phase.number, doneByPhase, profile.done),
       stats: computeStats(rows),
     });

@@ -40,7 +40,8 @@ A pixel-accurate, mobile-style single-screen UI (390 × 844) with a purple `#6C5
 - **Kaggle-based roadmap** — a 4-phase curriculum (Python & Data Wrangling → Core ML → Deep Learning → Specialize & Portfolio) with a visual timeline showing where you are.
 - **Skip courses you already know** — mark completed courses; the planner skips them and the roadmap strikes them through.
 - **AI Quest Coach** — a slide-up chat that answers in Thai, prefers Socratic hints over full solutions, and is aware of the current quest's context.
-- **Gamification** — XP, streaks, completion-based phase progress, and a letter grade derived from your completion rate.
+- **One quest per day** — after you finish (or skip) today's quest, the app locks until midnight (your timezone) and tells you when the next one unlocks — keeping the habit daily and the AI usage within the free tier.
+- **Gamification** — XP, real consecutive-day streaks, completion-based phase progress (advances only as you *complete* quests, not as days pass), and a letter grade derived from your completion rate.
 - **Graceful rate-limit handling** — when the AI quota is hit, the UI explains *which* quota (per-minute vs per-day) and *exactly when* access returns, converted to local time.
 - **Installable PWA** — responsive full-screen layout on phones, a web manifest, app icons, and a service worker (offline app shell) so it can be added to the home screen and launched like a native app.
 

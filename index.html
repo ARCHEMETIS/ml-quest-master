@@ -393,6 +393,18 @@ function loadProfile() {
 function saveProfile(p) { localStorage.setItem("mlq_profile", JSON.stringify(p)); }
 state.profile = loadProfile();
 
+// ---------- persist checklist ที่ติ๊กไว้ ต่อ progressId (#3) ----------
+function checkedKey(pid) { return "mlq_checked_" + pid; }
+function loadChecked(pid, len) {
+  try {
+    const saved = JSON.parse(localStorage.getItem(checkedKey(pid)) || "null");
+    if (Array.isArray(saved) && saved.length === len) return saved.map(Boolean);
+  } catch {}
+  return Array(len).fill(false);
+}
+function saveChecked(pid, arr) { try { localStorage.setItem(checkedKey(pid), JSON.stringify(arr)); } catch {} }
+function clearChecked(pid) { try { localStorage.removeItem(checkedKey(pid)); } catch {} }
+
 // ---------- init ----------
 async function init(fresh) {
   greet();
@@ -408,7 +420,7 @@ async function init(fresh) {
     const data = await res.json();
     if (res.status === 429 && data.rateLimited) { showRateLimit(data.rateLimited); return; }
     if (!res.ok) throw new Error(data.error || "โหลดเควสไม่สำเร็จ");
-    state.status = "pending";
+    state.status = data.status || "pending";
     applyData(data);
     renderQuest();
     renderStats();
@@ -443,8 +455,10 @@ function applyData(data) {
   state.progressId = data.progressId;
   state.stats = data.stats || state.stats;
   state.roadmap = data.roadmap || state.roadmap;
+  state.lockedUntilTomorrow = !!data.lockedUntilTomorrow;
+  state.nextResetAt = data.nextResetAt || null;
   if (data.profile) state.profile = { ...state.profile, ...data.profile };
-  state.checked = (data.quest.steps || []).map(() => false);
+  state.checked = loadChecked(data.progressId, (data.quest.steps || []).length); // กู้ checklist ที่ติ๊กไว้ (#3)
   state.messages = [{
     role: "assistant",
     content: `สวัสดีครับ ผมคือ Quest Coach 👋 ถามได้เลยเกี่ยวกับเควส "${data.quest.title}" — อยากได้ใบ้ให้เริ่ม, อธิบายแนวคิด/คณิตศาสตร์ หรือช่วยตรวจแผนก็ได้ครับ`
@@ -496,7 +510,9 @@ function renderQuest() {
 
   if (state.status === "done") {
     $("questDone").style.display = "flex";
-    $("doneMeta").textContent = `+${q.xp} XP · streak ${state.stats.streak} วัน`;
+    let meta = `+${q.xp} XP · streak ${state.stats.streak} วัน`;
+    if (state.lockedUntilTomorrow) meta += " · เควสใหม่พรุ่งนี้ 🔒";
+    $("doneMeta").textContent = meta;
     return;
   }
   if (state.status === "skip") {
@@ -566,6 +582,7 @@ function renderQuest() {
 
 function toggleStep(i) {
   state.checked[i] = !state.checked[i];
+  saveChecked(state.progressId, state.checked); // จำที่ติ๊กไว้ (#3)
   renderQuest();
 }
 
@@ -727,12 +744,18 @@ async function act(action) {
     const res = await fetch(`${API}/generate-quest`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action, progressId: state.progressId }),
+      body: JSON.stringify({
+        action,
+        progressId: state.progressId,
+        steps_done: state.checked.filter(Boolean).length, // ให้ server ตรวจว่าทำครบ (#4)
+      }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "อัปเดตไม่สำเร็จ");
     state.stats = data.stats;
     state.status = action === "complete" ? "done" : "skip";
+    state.lockedUntilTomorrow = true; // ทำเควสวันนี้แล้ว -> รอพรุ่งนี้ (#1)
+    clearChecked(state.progressId);   // เคลียร์ checklist ที่จำไว้ (#3)
     renderStats();
     renderQuest();
     renderRecent();

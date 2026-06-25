@@ -25,6 +25,9 @@ create table if not exists public.chat_history (
 create index if not exists idx_progress_day on public.progress(day desc);
 create index if not exists idx_chat_progress on public.chat_history(progress_id);
 
+-- กันสร้างเควส day ซ้ำตอนยิงพร้อมกัน (เปิด/refresh หลายแท็บ) — backend จับ conflict นี้แล้ว reuse
+create unique index if not exists uniq_progress_day on public.progress(day);
+
 -- ===== Row Level Security =====
 -- แอปนี้เป็น single-user และเข้าถึง Supabase ผ่าน Netlify Functions ด้วย anon key
 -- เปิด RLS แล้วอนุญาตให้ anon ทำ CRUD ได้ (ปรับ policy ตามต้องการถ้าทำ multi-user/auth)
